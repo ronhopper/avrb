@@ -5,11 +5,17 @@ module AVRB
     EOF_RECORD = ":00000001FF"
 
     def initialize
+      @address = 0
       @words = []
     end
 
+    def org(address)
+      @address = address
+    end
+
     def <<(word)
-      words << word
+      words[address] = word
+      self.address = address + 1
       self
     end
 
@@ -29,6 +35,7 @@ module AVRB
 
   private
 
+    attr_accessor :address
     attr_reader :words
 
     def checksum(record)

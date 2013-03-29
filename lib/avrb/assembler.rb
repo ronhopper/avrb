@@ -5,10 +5,34 @@ module AVRB
     def initialize(obj)
       @obj = obj
       @pc = 0
+      @forward_references = []
     end
 
     def <<(source)
-      eval(source)
+      source.lines.each do |line|
+        line = line.split(";").first.strip
+
+        if line =~ /^(\w+):/
+          label = $1
+          line = line[label.length+1..-1].strip
+          value = pc
+          singleton_class.define_method label do
+            value
+          end
+        end
+
+        begin
+          eval(line)
+        rescue NameError => e
+          @forward_references << [pc, line]
+          @obj << 0
+          @pc += 1
+        end
+      end
+      @forward_references.each do |address, line|
+        @obj.org(@pc = address)
+        eval(line)
+      end
       self
     end
 
