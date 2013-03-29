@@ -1,5 +1,9 @@
+require "avrb/registers"
+
 module AVRB
   class Assembler
+    include Registers
+
     attr_reader :pc
 
     def initialize(obj)
