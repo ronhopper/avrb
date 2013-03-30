@@ -1,10 +1,12 @@
 require "avrb/registers"
 require "avrb/directives"
+require "avrb/instructions"
 
 module AVRB
   class Assembler
     include Registers
     include Directives
+    include Instructions
 
     attr_reader :pc
 
@@ -27,9 +29,17 @@ module AVRB
           end
         end
         line[0] = "_" if line[0] == "."
+        line.gsub!(/(\w+):(\w+)/) do
+          # TODO: raise ArgumentError if eval($1).to_i != (eval($2).to_i + 1)
+          $2
+        end
+        line.gsub!(/(\w+)\+\s*(,|$)/) do
+          # TODO: raise ArgumentError if eval($1).to_i != (eval($2).to_i + 1)
+          "#$1.+()#$2"
+        end
 
         begin
-          eval("self.#{line}")
+          eval("self.#{line}") if line != ""
         rescue NameError => e
           @forward_references << [pc, line]
           @obj << 0
@@ -41,11 +51,6 @@ module AVRB
         eval(line)
       end
       self
-    end
-
-    def rjmp(offset)
-      @obj << (0xC000 | ((offset - pc - 1) & 0xFFF))
-      @pc += 1
     end
   end
 end

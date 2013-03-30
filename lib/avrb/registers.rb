@@ -23,6 +23,32 @@ module AVRB
     end
   end
 
+  class IndirectRegister < Register
+    attr_reader :offset
+
+    def initialize(to_i, direction=nil, offset=nil)
+      super(to_i)
+      @direction = direction
+      @offset = offset
+    end
+
+    def -@
+      IndirectRegister.new(to_i, :dec)
+    end
+
+    def +(offset=nil)
+      IndirectRegister.new(to_i, :inc, offset)
+    end
+
+    def dec?
+      @direction == :dec
+    end
+
+    def inc?
+      @direction == :inc
+    end
+  end
+
   module Registers
     0.upto(31) do |i|
       const_set "R#{i}", Register.new(i)
@@ -30,6 +56,13 @@ module AVRB
         Registers.const_get "R#{i}"
       end
     end
+
+    X = IndirectRegister.new(26)
+    Y = IndirectRegister.new(28)
+    Z = IndirectRegister.new(30)
+    def x; Registers::X; end
+    def y; Registers::Y; end
+    def z; Registers::Z; end
   end
 end
 

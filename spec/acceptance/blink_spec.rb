@@ -1,7 +1,7 @@
 require "avrb"
 
-describe "a simple halting program" do
-  xit "assembles to hex format" do
+describe "a simple blinking program" do
+  it "assembles to hex format" do
     obj = AVRB.assemble(SOURCE)
     obj.to_hex.should == OUTPUT
   end

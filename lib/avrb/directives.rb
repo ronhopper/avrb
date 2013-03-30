@@ -1,7 +1,10 @@
 module AVRB
   module Directives
     def _dw(*args)
-      args.each { |w| @obj << (w.to_i & 0xFFFF) }
+      args.each do |w|
+        @obj << (w.to_i & 0xFFFF)
+        @pc += 1
+      end
     end
 
     def _db(*args)
@@ -13,7 +16,7 @@ module AVRB
         end
       end
       args.flatten.each_slice(2) do |w|
-        @obj << (((w[1].to_i & 0xFF) << 8) | (w[0].to_i & 0xFF))
+        _dw(((w[1].to_i & 0xFF) << 8) | (w[0].to_i & 0xFF))
       end
     end
   end
