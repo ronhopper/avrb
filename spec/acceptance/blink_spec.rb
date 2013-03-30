@@ -1,13 +1,6 @@
 require "avrb"
 
-describe "a simple blinking program" do
-  it "assembles to hex format" do
-    obj = AVRB.assemble(SOURCE)
-    obj.to_hex.should == OUTPUT
-  end
-end
-
-SOURCE = <<END
+source = <<END
         rjmp reset
 
 ;-----------------------------------------------------------------------------;
@@ -30,10 +23,17 @@ loop:   sbi 0x16,0  ; PINB
         rjmp loop
 END
 
-OUTPUT = <<END.strip
+output = <<END
 :020000020000FC
 :1000000009C060E003D06A95E9F7089540E04A9599
 :0C001000F1F70895B89AB09AF4DFFDCF24
 :00000001FF
 END
+
+describe "a simple blinking program" do
+  it "assembles to hex format" do
+    obj = AVRB.assemble(source)
+    obj.to_hex.should == output.strip
+  end
+end
 
