@@ -3,8 +3,8 @@ require "avrb/obj"
 describe AVRB::Obj do
   let(:obj) { AVRB::Obj.new }
 
-  it "outputs an extended segment address and end of file record" do
-    obj.to_hex.should == ":020000020000FC\n:00000001FF"
+  it "outputs an end of file record" do
+    obj.to_hex.should == ":00000001FF"
   end
 
   it "outputs a partial line of bytecode" do

@@ -1,7 +1,7 @@
 module AVRB
   class Obj
+    LINES_PER_SEGMENT = 0x1000
     WORDS_PER_LINE = 8
-    ESA_RECORD = ":020000020000FC"
     EOF_RECORD = ":00000001FF"
 
     def initialize
@@ -20,14 +20,17 @@ module AVRB
     end
 
     def to_hex
-      records = [ESA_RECORD]
+      records = []
       address = 0
-      words.each_slice(WORDS_PER_LINE) do |line|
-        byte_count = 2 * line.length
-        record = [byte_count, address, 0] + line
-        record << checksum(record)
-        records << format(record)
-        address += byte_count
+      words.each_slice(LINES_PER_SEGMENT * WORDS_PER_LINE) do |segment|
+        records << esa_record(address)
+        segment.each_slice(WORDS_PER_LINE) do |line|
+          byte_count = 2 * line.length
+          record = [byte_count, address, 0] + line
+          record << checksum(record)
+          records << format(record)
+          address += byte_count
+        end
       end
       records << EOF_RECORD
       records.join("\n")
@@ -44,6 +47,12 @@ module AVRB
 
     def format(record)
       ":" << record.pack("CnCv#{record.length - 4}C").unpack("H*").join.upcase
+    end
+
+    def esa_record(address)
+      record = [2, 0, 2, address >> 4]
+      record << checksum(record)
+      ":" << record.pack("CnCnC").unpack("H*").join.upcase
     end
   end
 end
