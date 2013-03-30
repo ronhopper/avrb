@@ -2,7 +2,7 @@ require "avrb/assembler"
 
 describe AVRB::Assembler do
   let(:assembler) { AVRB::Assembler.new(obj) }
-  let(:obj) { [] }
+  let(:obj) { o = []; o.stub(:org); o }
 
   it "converts an instruction into bytecode" do
     assembler << "rjmp pc" << "rjmp pc"
