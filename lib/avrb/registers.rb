@@ -6,16 +6,20 @@ module AVRB
       @to_i = to_i
     end
 
+    def general?
+      (0..31).include?(to_i)
+    end
+
     def word?
-      to_i & 1 == 0
+      to_i.even?
     end
 
     def immediate?
-      to_i >= 16
+      (16..31).include?(to_i)
     end
 
     def immediate_word?
-      to_i & 0x19 == 0x18
+      [24, 26, 28, 30].include?(to_i)
     end
   end
 

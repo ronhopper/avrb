@@ -19,10 +19,16 @@ describe "registers" do
     context.instance_eval("r31").should be(r)
   end
 
-  it "converts a general purpose register to an integer" do
+  it "converts a register to an integer" do
     AVRB::Registers::R1.to_i.should == 1
     AVRB::Registers::R15.to_i.should == 15
     AVRB::Registers::R30.to_i.should == 30
+  end
+
+  it "checks if a register is general" do
+    AVRB::Registers::R0.should be_general
+    AVRB::Registers::R31.should be_general
+    AVRB::Register.new(32).should_not be_general
   end
 
   it "checks if a register is word aligned" do
