@@ -1,8 +1,10 @@
 require "avrb/registers"
+require "avrb/directives"
 
 module AVRB
   class Assembler
     include Registers
+    include Directives
 
     attr_reader :pc
 
@@ -24,9 +26,10 @@ module AVRB
             value
           end
         end
+        line[0] = "_" if line[0] == "."
 
         begin
-          eval(line)
+          eval("self.#{line}")
         rescue NameError => e
           @forward_references << [pc, line]
           @obj << 0
