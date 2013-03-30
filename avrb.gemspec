@@ -12,9 +12,10 @@ Gem::Specification.new do |s|
   s.email        = ["rchopper@gmail.com"]
   s.homepage     = "http://github.com/ronhopper/avrb"
   s.summary      = "AVR assembler."
-  s.files        = Dir.glob("{lib,spec}/**/*")
+  s.files        = Dir.glob("{bin,lib,spec}/**/*")
   s.test_files   = Dir.glob("spec/**/*")
   s.require_path = "lib"
+  s.executables  = ["avrb"]
 
   s.add_development_dependency "rspec", "~> 2.12"
 end

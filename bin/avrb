@@ -1,0 +1,14 @@
+if ARGV.length != 1
+  puts <<-END
+Usage: avrb source.asm
+  END
+  exit 1
+end
+
+source_file = ARGV.first
+output_file = (source_file.split(".")[0..-2] << "hex").join(".")
+
+require "avrb"
+obj = AVRB.assemble(File.read(source_file))
+File.write(output_file, obj.to_hex)
+
