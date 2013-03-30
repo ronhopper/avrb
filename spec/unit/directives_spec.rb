@@ -8,7 +8,8 @@ describe AVRB::Directives do
     {
       ".dw 1,0x9598,-2" => [0x0001, 0x9598, 0xFFFE],
       ".db 1,0xA1,-2,'c'" => [0xA101, 0x63FE],
-      ".db 'hello'" => [0x6568, 0x6C6C, 0x006F]
+      ".db 'hello'" => [0x6568, 0x6C6C, 0x006F],
+      ".def temp=R20\nldi temp,0xF0" => [0xEF40]
     }.each do |source, words|
       example source do
         assembler << source

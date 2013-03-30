@@ -28,6 +28,12 @@ module AVRB
             value
           end
         end
+
+        if line =~ /^\.def\s+/i
+          eval(line[1..-1].sub("=", ";") << ";end")
+          next
+        end
+
         line[0] = "_" if line[0] == "."
         line.gsub!(/(\w+):(\w+)/) do
           # TODO: raise ArgumentError if eval($1).to_i != (eval($2).to_i + 1)
