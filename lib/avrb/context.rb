@@ -1,12 +1,14 @@
 require "avrb/registers"
 require "avrb/directives"
 require "avrb/instructions"
+require "avrb/built_in_functions"
 
 module AVRB
   class Context < ::BasicObject
     include Registers
     include Directives
     include Instructions
+    include BuiltInFunctions
 
     attr_accessor :pc
 
