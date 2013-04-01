@@ -14,7 +14,7 @@ module AVRB
       end
       @forward_references.each do |address, line|
         @obj.org(context.pc = address)
-        process(line)
+        process!(line)
       end
       self
     end
@@ -31,7 +31,7 @@ module AVRB
       return unless line = process_directives(line)
       return if line == ""
       begin
-        context.instance_eval("self.#{line}")
+        process!(line)
       rescue NameError => e
         @forward_references << [context.pc, line]
         @obj << 0
@@ -40,6 +40,10 @@ module AVRB
     rescue => e
       puts "ERROR: #{e}\n#{current_line}"
       raise e
+    end
+
+    def process!(line)
+      context.instance_eval("self.#{line}")
     end
 
     def process_comment(line)
@@ -65,8 +69,11 @@ module AVRB
     end
 
     def process_directives(line)
-      if line =~ /^\.def\s/i
-        context.instance_eval(line[1..-1].sub("=", ";") << ";end")
+      if line =~ /^\.(def|equ|set)\s/i
+        label, *parts = line[5..-1].strip.split("=")
+        label.strip!
+        expression = parts.join("=").strip
+        context.instance_eval("def #{label}; #{expression}; end")
         return nil
       elsif line[0] == "."
         line[0] = "_"
