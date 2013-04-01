@@ -1,8 +1,9 @@
 require "avrb/assembler"
+require "avrb/obj"
 
 describe AVRB::Directives do
   let(:assembler) { AVRB::Assembler.new(obj) }
-  let(:obj) { o = []; o.stub(:org); o }
+  let(:obj) { AVRB::Obj.new }
 
   context "code segment" do
     {
@@ -16,11 +17,12 @@ describe AVRB::Directives do
       ".def temp = R20\nldi temp,240" => [0xEF40],
       ".def TEMP = R20\nldi TEMP,240" => [0xEF40],
       ".set foo = 256-16\nldi r20,foo" => [0xEF40],
-      ".set FOO = 256-16\nldi r20,FOO" => [0xEF40]
+      ".set FOO = 256-16\nldi r20,FOO" => [0xEF40],
+      ".org 4\n.dw 0x1234\n.org 0\n.dw 0x5678" => [0x5678, nil, nil, nil, 0x1234]
     }.each do |source, words|
       example source do
         assembler << source
-        obj.should == words
+        obj.send(:words).should == words
       end
     end
   end

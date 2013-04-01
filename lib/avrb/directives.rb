@@ -1,5 +1,9 @@
 module AVRB
   module Directives
+    def _org(address)
+      @obj.org(@pc = address)
+    end
+
     def _dw(*args)
       args.each do |w|
         @obj << (w.to_i & 0xFFFF)

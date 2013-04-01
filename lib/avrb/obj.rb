@@ -26,7 +26,7 @@ module AVRB
         records << esa_record(address)
         segment.each_slice(WORDS_PER_LINE) do |line|
           byte_count = 2 * line.length
-          record = [byte_count, address, 0] + line
+          record = [byte_count, address, 0] + line.map!(&:to_i)
           record << checksum(record)
           records << format(record)
           address += byte_count
