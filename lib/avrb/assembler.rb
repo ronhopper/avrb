@@ -3,7 +3,7 @@ require "avrb/context"
 module AVRB
   class Assembler
     def initialize(obj)
-      @context = Context.new(obj)
+      @context = Context.new(self, obj)
       @obj = obj
       @forward_references = []
     end

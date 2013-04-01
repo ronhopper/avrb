@@ -12,7 +12,8 @@ module AVRB
 
     attr_accessor :pc
 
-    def initialize(obj)
+    def initialize(assembler, obj)
+      @assembler = assembler
       @obj = obj
       @pc = 0
       singleton_class = class << self; self; end

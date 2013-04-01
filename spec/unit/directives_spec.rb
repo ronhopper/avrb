@@ -18,7 +18,8 @@ describe AVRB::Directives do
       ".def TEMP = R20\nldi TEMP,240" => [0xEF40],
       ".set foo = 256-16\nldi r20,foo" => [0xEF40],
       ".set FOO = 256-16\nldi r20,FOO" => [0xEF40],
-      ".org 4\n.dw 0x1234\n.org 0\n.dw 0x5678" => [0x5678, nil, nil, nil, 0x1234]
+      ".org 4\n.dw 0x1234\n.org 0\n.dw 0x5678" => [0x5678, nil, nil, nil, 0x1234],
+      ".include 'spec/assets/include_me.asm'\n.dw FOO" => [0x1234]
     }.each do |source, words|
       example source do
         assembler << source
