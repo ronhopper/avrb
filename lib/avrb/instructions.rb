@@ -68,9 +68,9 @@ module AVRB
     def st(i, rr);         _op_rd_ixyz(0x8200, rr, i);    end
     def std(i, rr);        _op_rd_iyz(0x8200, rr, i);     end
     def lpm(rd=r0, i=nil); _op_rd_iz(0x9000, rd, i);      end
-    def spm(i=nil);        _op_iz(0x95E8, i);             end
-    def in(rd, a);         _op_rd_a(0xB000, rd, a);       end
-    def out(a, rr);        _op_rd_a(0xB800, rr, a);       end
+    def spm;               _dw(0x95E8);                   end
+    def in(rd, io);        _op_rd_io(0xB000, rd, io);     end
+    def out(io, rr);       _op_rd_io(0xB800, rr, io);     end
     def push(rr);          _op_rd(0x920F, rr);            end
     def pop(rd);           _op_rd(0x900F, rd);            end
 
@@ -111,60 +111,55 @@ module AVRB
   private
 
     def _op_b(op, b)
-      # TODO: warn if b is out of range
+      _ensure_argument_in_range(b, 0..7, "s", "Operand")
       _dw(op | ((b & 7) << 4))
     end
 
     def _op_b_o7(op, b, o7)
-      # TODO: warn if b is out of range
+      _ensure_argument_in_range(b, 0..7, "s", "Operand")
       o7 -= (pc + 1)
-      # TODO: raise ArgumentError unless (-64..63).include?(o7)
+      _ensure_argument_in_range(o7, -64..63, "k", "Branch")
       _dw(op | ((o7 & 0x7F) << 3) | (b & 7))
     end
 
     def _op_io_b(op, io, b)
-      # TODO: raise ArgumentError unless io.is_a?(IORegister) && io.lower32? # TODO: fix this
-      # TODO: warn if b is out of range
+      _ensure_argument_in_range(io, 0..31, "P", "I/O")
+      _ensure_argument_in_range(b, 0..7, "s", "Operand")
       _dw(op | (io.to_i << 3) | (b & 7))
-    end
-
-    def _op_iz(op, i)
-      # TODO: raise ArgumentError unless i.nil? # TODO: some versions allow z+
-      _dw(op)
     end
 
     def _op_o12(op, o12)
       o12 -= (pc + 1)
-      # TODO: raise ArgumentError unless (-2048..2047).include?(o12)
+      _ensure_argument_in_range(o12, -2048..2047, "k", "Relative address")
       _dw(op | (o12 & 0xFFF))
     end
 
     def _op_rd(op, rd)
-      # TODO: raise ArgumentError unless rd.general?
+      _ensure_argument_is_register(rd)
       _dw(op | (rd.to_i << 4))
     end
 
-    def _op_rd_a(op, rd, a)
-      # TODO: raise ArgumentError unless rd.is_a?(Register)
-      # TODO: raise ArgumentError if a < 0 || a > 63
-      _dw(op | ((a & 0x30) << 5) | (rd.to_i << 4) | (a & 0xF))
-    end
-
     def _op_rd_b(op, rd, b)
-      # TODO: raise ArgumentError unless rd.general?
-      # TODO: warn if b is out of range
+      _ensure_argument_is_register(rd)
+      _ensure_argument_in_range(b, 0..7, "s", "Operand")
       _dw(op | (rd.to_i << 4) | (b & 7))
     end
 
+    def _op_rd_io(op, rd, io)
+      _ensure_argument_is_register(rd)
+      _ensure_argument_in_range(io, 0..63, "P", "I/O")
+      _dw(op | ((io & 0x30) << 5) | (rd.to_i << 4) | (io & 0xF))
+    end
+
     def _op_rd_ixyz(op, rd, i)
-      # TODO: raise ArgumentError unless rd.is_a?(Register)
-      # TODO: raise ArgumentError unless [x,x+1,-x,y,y+1,-y,z,z+1,-z].include?(i)
+      _ensure_argument_is_register(rd)
+      _ensure_argument_is_indirect(i) { i.offset.nil? }
       t = case i.to_i
           when x.to_i then 0x100C
           when y.to_i then 0x0008 | ((i.inc? || i.dec?) ? 0x1000 : 0)
           when z.to_i then ((i.inc? || i.dec?) ? 0x1000 : 0)
           else
-            # TODO: Argument Error
+            Kernel.raise "wtf"
           end
       t |= 2 if i.dec?
       t |= 1 if i.inc?
@@ -172,55 +167,73 @@ module AVRB
     end
 
     def _op_rd_iyz(op, rd, i)
-      # TODO: raise ArgumentError unless rd.is_a?(Register)
-      # TODO: raise ArgumentError if (i < y || i > (y+63)) && (i < z || i > (z+63))
+      _ensure_argument_is_register(rd)
+      _ensure_argument_is_indirect(i) { i.to_i != x.to_i && !i.offset.nil? }
       o6 = i.offset
+      _ensure_argument_in_range(o6, 0..63, "q", "Displacement")
       _dw(op | ((o6 & 0x20) << 8) | ((o6 & 0x18) << 7) | (rd.to_i << 4) | ((~i.to_i & 2) << 2) | (o6 & 7))
     end
 
     def _op_rd_iz(op, rd, i)
-      # TODO: raise ArgumentError unless rd.is_a?(Register)
-      if i.nil?
-        # TODO: raise ArgumentError unless rd == R0
+      _ensure_argument_is_register(rd)
+      if i.nil? && rd.to_i == 0
         _dw((op & ~2) | 0x5C8 | ((op & 2) << 3))
-      elsif i.to_i == z.to_i
-        if i.inc?
-          _dw(op | (rd.to_i << 4) | 5)
-        else
-          _dw(op | (rd.to_i << 4) | 4)
-        end
       else
-        # TODO: raise ArgumentError
+        _ensure_argument_is_indirect(i) { i.to_i == z.to_i && !i.dec? && i.offset.nil? }
+        _dw(op | (rd.to_i << 4) | 4 | (i.inc? ? 1 : 0))
       end
     end
 
     def _op_rd_k16(op, rd, k16)
-      # TODO: raise ArgumentError unless rd.is_a?(Register)
-      # TODO: raise ArgumentError if k16 < 0 || k16 > 65535
+      _ensure_argument_is_register(rd)
+      _ensure_argument_in_range(k16, 0..65535, "k", "SRAM")
       _dw(op | (rd.to_i << 4), k16)
     end
 
     def _op_rd_rr(op, rd, rr)
-      # TODO: raise ArgumentError unless rd.general? && rr.general?
+      _ensure_argument_is_register(rd)
+      _ensure_argument_is_register(rr)
       _dw(op | ((rr.to_i & 0x10) << 5) | (rd.to_i << 4) | (rr.to_i & 0xF))
     end
 
     def _op_rdi_k8(op, rdi, k8)
-      # TODO: raise ArgumentError unless rdi.is_a?(Register) && rdi.immediate?
-      # TODO: warn if k8 is out of range
+      _ensure_argument_is_register(rdi, :immediate?, "an immediate operation")
+      _ensure_argument_in_range(k8, -128..255, "k", "Constant")
       _dw(op | ((k8 & 0xF0) << 4) | ((rdi.to_i & 0x0F) << 4) | (k8 & 0xF))
     end
 
     def _op_rdiw_k6(op, rdiw, k6)
-      # TODO: raise ArgumentError unless rdiw.is_a?(Register) && rdiw.immediate_word?
-      # TODO: warn if k6 is out of range
+      _ensure_argument_is_register(rdiw, :immediate_word?, "an immediate word operation")
+      _ensure_argument_in_range(k6, 0..63, "k", "Constant")
       _dw(op | ((k6 & 0x30) << 2) | ((rdiw.to_i & 0x06) << 3) | (k6 & 0xF))
     end
 
     def _op_rdw_rrw(op, rdw, rrw)
-      # TODO: raise ArgumentError unless rd.is_a?(Register) && rd.word?
-      # TODO: raise ArgumentError unless rr.is_a?(Register) && rr.word?
+      _ensure_argument_is_register(rdw, :word?, "a word operation")
+      _ensure_argument_is_register(rrw, :word?, "a word operation")
       _dw(op | (rdw.to_i << 3) | (rrw.to_i >> 1))
+    end
+
+    def _ensure_argument_is_register(arg, feature=nil, description=nil)
+      unless arg.kind_of?(AVRB::Register)
+        Kernel.raise ArgumentError, "Operand is not a register"
+      end
+      return if feature.nil? || arg.send(feature)
+      Kernel.raise ArgumentError, "Register cannot support #{description}"
+    end
+
+    def _ensure_argument_is_indirect(arg)
+      unless arg.kind_of?(AVRB::IndirectRegister)
+        Kernel.raise ArgumentError, "Operand is not an indirect register"
+      end
+      return if !Kernel.block_given? || yield
+      Kernel.raise ArgumentError, "Register cannot support this operation"
+    end
+
+    def _ensure_argument_in_range(arg, range, name, type)
+      return if range.include?(arg)
+      Kernel.raise ArgumentError,
+        "#{type} out of range (#{range.first} <= #{name} <= #{range.last})"
     end
   end
 end
